@@ -1,4 +1,3 @@
-import type { ComponentType } from "react";
 import Link from "next/link";
 import { BrandLogo } from "@/components/layout/BrandLogo";
 import { Container } from "@/components/ui/Container";
@@ -46,13 +45,11 @@ function FacebookIcon() {
   );
 }
 
-type SocialLink = { href: string; icon: ComponentType; label: string };
-
 const socialLinks = [
   { href: siteConfig.social.linkedin, icon: LinkedinIcon, label: "LinkedIn" },
   { href: siteConfig.social.instagram, icon: InstagramIcon, label: "Instagram" },
   { href: siteConfig.social.facebook, icon: FacebookIcon, label: "Facebook" },
-].filter((item): item is SocialLink => Boolean(item.href));
+].flatMap((item) => (item.href ? [{ ...item, href: item.href }] : []));
 
 export function Footer() {
   return (
