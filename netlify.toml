@@ -1,0 +1,22 @@
+[build]
+  command = "npm run netlify:build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "22"
+  NEXT_PRIVATE_NETLIFY_SKEW_PROTECTION = "true"
+
+# Keep a single canonical production hostname for SEO and analytics consistency.
+[[redirects]]
+  from = "https://smilesandgigglesfoundation.org/*"
+  to = "https://www.smilesandgigglesfoundation.org/:splat"
+  status = 301
+  force = true
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-Frame-Options = "SAMEORIGIN"
+    Strict-Transport-Security = "max-age=31536000"
