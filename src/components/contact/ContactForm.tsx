@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { FormEvent, useState } from "react";
 import { Send } from "@/components/ui/LucideIcons";
 import { contactContent } from "@/content/contact";
 
@@ -12,6 +15,40 @@ const nextSteps = [
 ] as const;
 
 export function ContactForm({ submitted = false }: { submitted?: boolean }) {
+  const [isSubmitted, setIsSubmitted] = useState(submitted);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    setIsSubmitting(true);
+    setSubmitError("");
+
+    try {
+      const formData = new FormData(form);
+      const encoded = new URLSearchParams();
+      formData.forEach((value, key) => {
+        if (typeof value === "string") encoded.append(key, value);
+      });
+
+      const response = await fetch("/", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: encoded.toString(),
+      });
+
+      if (!response.ok) throw new Error(`Submission failed (${response.status})`);
+
+      setIsSubmitted(true);
+      form.reset();
+    } catch {
+      setSubmitError("We couldn’t submit your enquiry right now. Please try again or contact us by email/WhatsApp.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   return (
     <form
       name="contact"
@@ -19,16 +56,22 @@ export function ContactForm({ submitted = false }: { submitted?: boolean }) {
       action="/contact?submitted=1"
       data-netlify="true"
       data-netlify-honeypot="bot-field"
+      onSubmit={handleSubmit}
       className="flex h-full flex-col overflow-hidden rounded-[30px] border border-brand-purple/15 bg-white shadow-[0_24px_70px_rgba(13,27,61,.10)]"
     >
       <input type="hidden" name="form-name" value="contact" />
       <p className="hidden" aria-hidden="true"><label>Do not fill this out: <input name="bot-field" /></label></p>
       <div className="h-2 bg-gradient-to-r from-brand-purple via-brand-pink to-brand-teal" />
       <div className="flex flex-1 flex-col p-6 sm:p-8 lg:p-9">
-        {submitted ? (
+        {isSubmitted ? (
           <div role="status" className="mb-5 rounded-[18px] border border-brand-teal/20 bg-brand-teal-soft px-4 py-3.5 text-[14px] leading-6 text-brand-navy">
             <strong className="block text-brand-teal">Thank you — your enquiry has been received.</strong>
             Our team will review it and respond using your preferred contact method.
+          </div>
+        ) : null}
+        {submitError ? (
+          <div role="alert" className="mb-5 rounded-[18px] border border-red-200 bg-red-50 px-4 py-3.5 text-[14px] leading-6 text-red-700">
+            {submitError}
           </div>
         ) : null}
         <div className="rounded-[22px] border border-brand-purple/10 bg-[radial-gradient(circle_at_92%_10%,rgba(22,185,173,.12),transparent_28%),linear-gradient(135deg,#faf7ff_0%,#fffafd_48%,#f5fffc_100%)] p-4 sm:p-5">
@@ -50,7 +93,7 @@ export function ContactForm({ submitted = false }: { submitted?: boolean }) {
 
         <div className="mt-4 flex flex-col gap-4 rounded-2xl bg-[linear-gradient(135deg,#fff4e8,#fff8f1)] px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-[13px] leading-5 text-brand-navy/80">{contactContent.responseNote}</p>
-          <button type="submit" className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-full bg-gradient-to-r from-brand-purple to-brand-pink px-5 py-2.5 text-[14px] font-extrabold text-white shadow-[0_14px_34px_rgba(109,60,201,.20)] transition hover:-translate-y-0.5"><Send size={16} />Send Enquiry</button>
+          <button type="submit" disabled={isSubmitting} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-full bg-gradient-to-r from-brand-purple to-brand-pink px-5 py-2.5 text-[14px] font-extrabold text-white shadow-[0_14px_34px_rgba(109,60,201,.20)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"><Send size={16} />{isSubmitting ? "Sending…" : "Send Enquiry"}</button>
         </div>
 
         <div className="mt-5 rounded-[22px] border border-brand-teal/15 bg-[linear-gradient(135deg,#f4fffd_0%,#ffffff_55%,#faf7ff_100%)] p-4">

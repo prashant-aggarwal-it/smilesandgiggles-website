@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { FormEvent, useState } from "react";
 import { Send } from "@/components/ui/LucideIcons";
 
 type InterestType = "Volunteer" | "Share Professional Skills" | "Refer a School / Community" | "Employee Volunteering" | "Other";
@@ -11,6 +11,40 @@ const label = "grid gap-2 text-[14px] font-extrabold text-brand-navy";
 
 export function GetInvolvedInterestForm({ submitted = false }: { submitted?: boolean }) {
   const [interest, setInterest] = useState<InterestType>("Volunteer");
+  const [isSubmitted, setIsSubmitted] = useState(submitted);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    setIsSubmitting(true);
+    setSubmitError("");
+
+    try {
+      const formData = new FormData(form);
+      const encoded = new URLSearchParams();
+      formData.forEach((value, key) => {
+        if (typeof value === "string") encoded.append(key, value);
+      });
+
+      const response = await fetch("/", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: encoded.toString(),
+      });
+
+      if (!response.ok) throw new Error(`Submission failed (${response.status})`);
+
+      setIsSubmitted(true);
+      form.reset();
+      setInterest("Volunteer");
+    } catch {
+      setSubmitError("We couldn’t submit your interest right now. Please try again or contact us by email/WhatsApp.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
   return (
     <form
@@ -19,16 +53,22 @@ export function GetInvolvedInterestForm({ submitted = false }: { submitted?: boo
       action="/get-involved?submitted=1"
       data-netlify="true"
       data-netlify-honeypot="bot-field"
+      onSubmit={handleSubmit}
       className="overflow-hidden rounded-[30px] border border-brand-purple/15 bg-white shadow-[0_24px_70px_rgba(13,27,61,.10)]"
     >
       <input type="hidden" name="form-name" value="get-involved" />
       <p className="hidden" aria-hidden="true"><label>Do not fill this out: <input name="bot-field" /></label></p>
       <div className="h-2 bg-gradient-to-r from-brand-purple via-brand-pink to-brand-teal" />
       <div className="p-6 sm:p-8">
-        {submitted ? (
+        {isSubmitted ? (
           <div role="status" className="mb-5 rounded-[18px] border border-brand-teal/20 bg-brand-teal-soft px-4 py-3.5 text-[14px] leading-6 text-brand-navy">
             <strong className="block text-brand-teal">Thank you — we received your interest.</strong>
             Our team will review the details and share the most relevant next step.
+          </div>
+        ) : null}
+        {submitError ? (
+          <div role="alert" className="mb-5 rounded-[18px] border border-red-200 bg-red-50 px-4 py-3.5 text-[14px] leading-6 text-red-700">
+            {submitError}
           </div>
         ) : null}
         <div className="rounded-[22px] border border-brand-purple/10 bg-[radial-gradient(circle_at_95%_5%,rgba(242,61,146,.10),transparent_28%),linear-gradient(135deg,#faf7ff,#ffffff_55%,#f3fffc)] p-5">
@@ -88,7 +128,7 @@ export function GetInvolvedInterestForm({ submitted = false }: { submitted?: boo
 
         <div className="mt-4 flex flex-col gap-4 rounded-2xl bg-[linear-gradient(135deg,#f2fffc,#faf7ff)] px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-[13px] leading-5 text-brand-navy/75">We review each response against current needs, suitability and any required safeguards, then share the most relevant next step.</p>
-          <button type="submit" className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-full bg-gradient-to-r from-brand-purple to-brand-pink px-5 py-2.5 text-[14px] font-extrabold text-white shadow-[0_14px_34px_rgba(109,60,201,.20)] transition hover:-translate-y-0.5"><Send size={16} />Share My Interest</button>
+          <button type="submit" disabled={isSubmitting} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-full bg-gradient-to-r from-brand-purple to-brand-pink px-5 py-2.5 text-[14px] font-extrabold text-white shadow-[0_14px_34px_rgba(109,60,201,.20)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"><Send size={16} />{isSubmitting ? "Sending…" : "Share My Interest"}</button>
         </div>
         <p className="mt-4 text-xs leading-5 text-slate-500">By submitting this form, you agree that we may use these details to respond to your interest. See our <Link href="/privacy" className="font-bold text-brand-purple hover:underline">Privacy Policy</Link>.</p>
       </div>
