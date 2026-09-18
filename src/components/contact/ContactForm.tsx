@@ -32,7 +32,7 @@ export function ContactForm({ submitted = false }: { submitted?: boolean }) {
         if (typeof value === "string") encoded.append(key, value);
       });
 
-      const response = await fetch("/", {
+      const response = await fetch("/netlify-forms.html", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: encoded.toString(),
